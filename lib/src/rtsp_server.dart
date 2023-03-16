@@ -1,3 +1,5 @@
+import 'package:rtsp_server/src/rtsp_headers.dart';
+
 import 'connection_manager.dart';
 
 /// rtsp服务
@@ -47,7 +49,12 @@ class RTSPServer {
   }
 
   void _handleOptions(RTSPRequest request) {
-    // TODO: 处理
+    request.sendResponse(RTSPResponse.ok(
+      headers: {
+        RTSPHeaders.public.name:
+            RTSPHeaders.values.map((e) => e.name).join(', '),
+      },
+    ));
   }
 
   void _handlePlay(RTSPRequest request) {

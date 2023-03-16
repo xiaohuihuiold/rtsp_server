@@ -12,6 +12,9 @@ enum RTSPClientState {
 
 /// 客户端
 class RTSPClient {
+  /// 连接管理器
+  final ConnectionManager connectionManager;
+
   /// 连接
   final Socket socket;
 
@@ -24,9 +27,18 @@ class RTSPClient {
   /// 地址
   String get address => socket.remoteAddress.address;
 
-  RTSPClient._create({
+  /// 服务器名称
+  String get serverName => connectionManager.serverName;
+
+  RTSPClient._create(
+    this.connectionManager, {
     required this.socket,
   });
+
+  /// 发送数据
+  void send(Object? data) {
+    socket.write(data);
+  }
 
   @override
   String toString() {

@@ -33,18 +33,25 @@ class RTSPRequest {
   /// URI
   final Uri uri;
 
+  /// CSeq
+  final String? cSeq;
+
   /// 请求头
   final Map<String, String> headers;
 
   /// 内容
-  final String? data;
+  final String? body;
+
+  /// 路径
+  String get path => uri.path;
 
   RTSPRequest._create({
     required this.client,
     required this.method,
     required this.uri,
+    this.cSeq,
     required this.headers,
-    this.data,
+    this.body,
   });
 
   factory RTSPRequest._fromBytes(RTSPClient client, Uint8List bytes) {
@@ -68,7 +75,7 @@ class RTSPRequest {
       throw Exception('不支持的方法: $methodStr');
     }
 
-    // 查找请求头
+    // 处理请求头
     final headers = <String, String>{};
     int headersEndIndex = 1;
     headersEndIndex = lines.indexWhere((element) {
@@ -82,7 +89,7 @@ class RTSPRequest {
       return false;
     }, headersEndIndex);
 
-    // 查找请求内容
+    // 处理请求内容
     int bodyBeginIndex = headersEndIndex;
     bodyBeginIndex =
         lines.indexWhere((element) => element.isNotEmpty, bodyBeginIndex);
@@ -95,11 +102,19 @@ class RTSPRequest {
       method: method,
       uri: Uri.parse(uriStr),
       headers: headers,
+      cSeq: headers[RTSPHeaders.cSeq.name],
     );
+  }
+
+  /// 发送响应数据
+  void sendResponse(RTSPResponse response) {
+    response.cSeq = cSeq;
+    response._serverName = client.serverName;
+    client.send(response.toResponseText());
   }
 
   @override
   String toString() {
-    return 'RTSPRequest(${method.method}, ${client.address}): ${uri.path}';
+    return 'RTSPRequest(${method.method}, ${client.address}): $path';
   }
 }

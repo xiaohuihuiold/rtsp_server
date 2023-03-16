@@ -16,14 +16,53 @@ class RTSPServer {
     this.serverName = 'rtspserver',
   });
 
+  /// 开启服务
   Future<bool> start() async {
     if (_connectionManager?.running == true) {
       return true;
     }
     _connectionManager?.stop();
-    _connectionManager = ConnectionManager(port);
+    _connectionManager = ConnectionManager(port: port, serverName: serverName);
+    _connectionManager?.handler.describe(_handleDescribe);
+    _connectionManager?.handler.announce(_handleAnnounce);
+    _connectionManager?.handler.options(_handleOptions);
+    _connectionManager?.handler.play(_handlePlay);
+    _connectionManager?.handler.record(_handleRecord);
+    _connectionManager?.handler.setup(_handleSetup);
+    _connectionManager?.handler.teardown(_handleTeardown);
     return await _connectionManager?.start() == true;
   }
 
-  void stop() {}
+  /// 停止服务
+  void stop() {
+    _connectionManager?.stop();
+  }
+
+  void _handleDescribe(RTSPRequest request) {
+    // TODO: 处理
+  }
+
+  void _handleAnnounce(RTSPRequest request) {
+    // TODO: 处理
+  }
+
+  void _handleOptions(RTSPRequest request) {
+    // TODO: 处理
+  }
+
+  void _handlePlay(RTSPRequest request) {
+    // TODO: 处理
+  }
+
+  void _handleRecord(RTSPRequest request) {
+    // TODO: 处理
+  }
+
+  void _handleSetup(RTSPRequest request) {
+    // TODO: 处理
+  }
+
+  void _handleTeardown(RTSPRequest request) {
+    // TODO: 处理
+  }
 }

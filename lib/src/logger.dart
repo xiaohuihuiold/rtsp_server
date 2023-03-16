@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
-
 import 'package:date_format/date_format.dart';
 import 'package:logger/logger.dart';
+import 'connection_manager.dart';
 
 final logger = LoggerWrapper();
 
@@ -11,20 +10,24 @@ class LoggerWrapper {
   final logger = Logger(
     printer: HybridPrinter(
       MySimplePrinter(),
-      error: PrettyPrinter(printTime: true),
+      error: PrettyPrinter(
+        printTime: true,
+        stackTraceBeginIndex: 2,
+        methodCount: 4,
+      ),
     ),
   );
 
   void v(
     dynamic message, {
-    Socket? socket,
+    RTSPClient? client,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.verbose,
       message,
-      socket: socket,
+      client: client,
       error: error,
       stackTrace: stackTrace,
     );
@@ -32,14 +35,14 @@ class LoggerWrapper {
 
   void d(
     dynamic message, {
-    Socket? socket,
+    RTSPClient? client,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.debug,
       message,
-      socket: socket,
+      client: client,
       error: error,
       stackTrace: stackTrace,
     );
@@ -47,14 +50,14 @@ class LoggerWrapper {
 
   void i(
     dynamic message, {
-    Socket? socket,
+    RTSPClient? client,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.info,
       message,
-      socket: socket,
+      client: client,
       error: error,
       stackTrace: stackTrace,
     );
@@ -62,14 +65,14 @@ class LoggerWrapper {
 
   void w(
     dynamic message, {
-    Socket? socket,
+    RTSPClient? client,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.warning,
       message,
-      socket: socket,
+      client: client,
       error: error,
       stackTrace: stackTrace,
     );
@@ -77,14 +80,14 @@ class LoggerWrapper {
 
   void e(
     dynamic message, {
-    Socket? socket,
+    RTSPClient? client,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.error,
       message,
-      socket: socket,
+      client: client,
       error: error,
       stackTrace: stackTrace,
     );
@@ -92,14 +95,14 @@ class LoggerWrapper {
 
   void wtf(
     dynamic message, {
-    Socket? socket,
+    RTSPClient? client,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.wtf,
       message,
-      socket: socket,
+      client: client,
       error: error,
       stackTrace: stackTrace,
     );
@@ -108,18 +111,14 @@ class LoggerWrapper {
   void log(
     Level level,
     dynamic message, {
-    Socket? socket,
+    RTSPClient? client,
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    if (socket != null) {
-      message = '[${_getAddress(socket)}]: $message';
+    if (client != null) {
+      message = '[${client.address}]: $message';
     }
     logger.log(level, message, error, stackTrace);
-  }
-
-  String? _getAddress(Socket? socket) {
-    return socket?.remoteAddress.address;
   }
 }
 

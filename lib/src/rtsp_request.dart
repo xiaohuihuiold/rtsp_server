@@ -40,7 +40,9 @@ class RTSPRequest {
   final Map<String, String> headers;
 
   /// 内容
-  final String? body;
+  String? _body;
+
+  String? get body => _body;
 
   /// 服务器名称
   final String serverName;
@@ -54,9 +56,9 @@ class RTSPRequest {
     required this.uri,
     this.cSeq,
     required this.headers,
-    this.body,
+    String? body,
     required this.serverName,
-  });
+  }) : _body = body;
 
   factory RTSPRequest._fromBytes(
     RTSPSession session, {
@@ -141,6 +143,14 @@ class RTSPRequest {
   /// 获取头
   String? getHeader(RTSPHeaders header) {
     return headers[header.name];
+  }
+
+  /// 设置body
+  void setBody(String data) {
+    if (data.endsWith('\r\n')) {
+      data = data.substring(0, data.length - 2);
+    }
+    _body = data;
   }
 
   /// 发送响应数据

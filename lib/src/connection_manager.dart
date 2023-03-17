@@ -86,6 +86,9 @@ class ConnectionManager {
   /// 请求处理
   final handler = RequestHandler._();
 
+  /// 分包的请求
+  final _idleRequest = <RTSPSession, RTSPRequest>{};
+
   /// socket
   ServerSocket? _serverSocket;
 
@@ -153,49 +156,74 @@ class ConnectionManager {
   void _onClientData(RTSPSession session, Uint8List bytes) {
     if (session.state == RTSPSessionState.none) {
       // 客户端未确定推流播流时只有文本数据
-      try {
-        final data = utf8.decode(bytes);
-
-        final cSeqReg = RegExp(r'CSeq\s*:\s*(\d+)');
-        final cSeqMatch = cSeqReg.firstMatch(data);
-        final cSeq = cSeqMatch?.group(1);
-        try {
-          final request = RTSPRequest._fromString(
-            session,
-            data: data,
-            serverName: serverName,
-          );
-          logger.v(
-            '请求${request.method.method} ${request.path}',
-            session: request.session,
-          );
-          final handle = handler[request.method];
-          if (handle != null) {
-            try {
-              handle(request);
-            } catch (e) {
-              logger.e('请求处理错误', session: session, error: e);
-              request.sendResponse(
-                RTSPResponse.internalServerError(body: e.toString()),
-              );
-            }
-          } else {
-            request.sendResponse(RTSPResponse.methodNotAllowed());
-          }
-        } on RequestMethodException catch (e) {
-          final response = RTSPResponse.methodNotAllowed();
-          response.cSeq = cSeq;
-          logger.w('不支持的方法', session: session, error: e);
-          session.sendResponse(response);
-        } catch (e) {
-          rethrow;
-        }
-      } catch (e) {
-        logger.e('解析请求错误', session: session, error: e);
-        session.sendResponse(RTSPResponse.badRequest(body: e.toString()));
-      }
+      _handleRequest(session, bytes);
     } else {
-      // TODO: 处理RTP数据
+      _handleRTP(session, bytes);
     }
+  }
+
+  /// 处理请求
+  void _handleRequest(RTSPSession session, Uint8List bytes) {
+    try {
+      final data = utf8.decode(bytes);
+      final partRequest = _idleRequest.remove(session);
+      if (partRequest != null) {
+        partRequest.setBody(data);
+        logger.v('请求分包合并', session: session);
+      }
+
+      final cSeqReg = RegExp(r'CSeq\s*:\s*(\d+)');
+      final cSeqMatch = cSeqReg.firstMatch(data);
+      final cSeq = cSeqMatch?.group(1) ?? partRequest?.cSeq;
+      try {
+        final request = partRequest ??
+            RTSPRequest._fromString(
+              session,
+              data: data,
+              serverName: serverName,
+            );
+        logger.v(
+          '请求${request.method.method} ${request.path}',
+          session: request.session,
+        );
+        final contentLength =
+            int.tryParse(request.getHeader(RTSPHeaders.contentLength) ?? '');
+        if (contentLength != null &&
+            contentLength != 0 &&
+            request.body?.isNotEmpty != true) {
+          logger.v('请求分包', session: request.session);
+          _idleRequest[session] = request;
+          return;
+        }
+        final handle = handler[request.method];
+        if (handle != null) {
+          try {
+            handle(request);
+          } catch (e) {
+            logger.e('请求处理错误', session: session, error: e);
+            request.sendResponse(
+              RTSPResponse.internalServerError(body: e.toString()),
+            );
+          }
+        } else {
+          request.sendResponse(RTSPResponse.methodNotAllowed());
+        }
+      } on RequestMethodException catch (e) {
+        final response = RTSPResponse.methodNotAllowed();
+        response.cSeq = cSeq;
+        logger.w('不支持的方法', session: session, error: e);
+        session.sendResponse(response);
+      } catch (e) {
+        rethrow;
+      }
+    } catch (e) {
+      logger.e('解析请求错误', session: session, error: e);
+      session.sendResponse(RTSPResponse.badRequest(body: e.toString()));
+    }
+  }
+
+  /// 处理RTP数据
+  void _handleRTP(RTSPSession session, Uint8List bytes) {
+    // TODO: 处理RTP数据
   }
 }

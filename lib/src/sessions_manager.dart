@@ -35,7 +35,7 @@ class SessionsManager {
   }
 
   /// 获取会话
-  RTSPSession? getSession(String sessionId) {
+  RTSPSession? getSession(String? sessionId) {
     return _sessions[sessionId];
   }
 
@@ -47,6 +47,11 @@ class SessionsManager {
   /// 设置会话状态
   void setSessionState(RTSPSession session, RTSPSessionState state) {
     session._state = state;
+  }
+
+  /// 设置会话角色
+  void setSessionRole(RTSPSession session, RTSPSessionRole role) {
+    session._role = role;
   }
 
   /// 设置会话id

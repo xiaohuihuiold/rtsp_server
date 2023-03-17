@@ -6,6 +6,8 @@ enum RTSPHeaders {
   transport('Transport'),
   range('Range'),
   contentLength('Content-Length'),
+  contentType('Content-Type'),
+  contentBase('Content-Base'),
   session('Session');
 
   final String name;

@@ -161,6 +161,24 @@ class RTSPResponse {
     );
   }
 
+  factory RTSPResponse.describe({
+    String? cSeq,
+    String? session,
+    required String sdp,
+    required String baseUrl,
+  }) {
+    return RTSPResponse._create(
+      cSeq: cSeq,
+      session: session,
+      status: RTSPResponseStatus.ok,
+      headers: {
+        RTSPHeaders.contentType.name: 'application/sdp',
+        RTSPHeaders.contentBase.name: baseUrl,
+      },
+      body: sdp,
+    );
+  }
+
   /// 生成响应文本
   String toResponseText() {
     final stringBuffer = StringBuffer();
@@ -175,6 +193,11 @@ class RTSPResponse {
     final session = this.session;
     if (session != null) {
       headers[RTSPHeaders.session.name] = session;
+    }
+    final body = this.body;
+    if (body != null) {
+      headers[RTSPHeaders.contentLength.name] =
+          (utf8.encode(body).length + 2).toString();
     }
     for (final entry in headers.entries) {
       stringBuffer.write('${entry.key}: ${entry.value}\r\n');

@@ -12,6 +12,16 @@ enum RTSPSessionState {
   disconnected,
 }
 
+/// 客户端角色
+enum RTSPSessionRole {
+  // 未知
+  none,
+  // 播放
+  player,
+  // 推流
+  recorder,
+}
+
 /// 客户端
 class RTSPSession {
   /// 服务器名称
@@ -24,6 +34,10 @@ class RTSPSession {
   RTSPSessionState _state = RTSPSessionState.none;
 
   RTSPSessionState get state => _state;
+  /// 角色
+  RTSPSessionRole _role = RTSPSessionRole.none;
+
+  RTSPSessionRole get role => _role;
 
   /// 路径
   String? _path;

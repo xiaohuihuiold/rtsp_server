@@ -1,4 +1,5 @@
 import 'package:rtsp_server/src/logger.dart';
+import 'package:rtsp_server/src/streams_manager.dart';
 
 import 'rtsp_headers.dart';
 import 'connection_manager.dart';
@@ -16,6 +17,9 @@ class RTSPServer {
 
   /// 会话管理器
   final sessionsManager = SessionsManager();
+
+  /// 流管理器
+  final streamsManager = StreamsManager();
 
   RTSPServer({
     required this.port,
@@ -58,7 +62,16 @@ class RTSPServer {
   }
 
   void _handleDescribe(RTSPRequest request) {
-    // TODO: 处理
+    final streams = streamsManager.getStreams(request.session.path);
+    if (streams == null) {
+      request.sendResponse(RTSPResponse.notFound());
+    } else {
+      sessionsManager.setSessionRole(request.session, RTSPSessionRole.player);
+      request.sendResponse(RTSPResponse.describe(
+        sdp: streams.sdp,
+        baseUrl: '${request.uri.scheme}://${request.uri.authority}/',
+      ));
+    }
   }
 
   void _handleAnnounce(RTSPRequest request) {
@@ -67,7 +80,13 @@ class RTSPServer {
       request.sendResponse(RTSPResponse.badRequest(body: 'sdp=null'));
     } else {
       logger.v('设置sdp数据: \n$sdp', session: request.session);
-      request.sendResponse(RTSPResponse.ok());
+      sessionsManager.setSessionRole(request.session, RTSPSessionRole.recorder);
+      final streams = streamsManager.spawnStreams(request.session, sdp);
+      if (streams == null) {
+        request.sendResponse(RTSPResponse.badRequest(body: 'path=null'));
+      } else {
+        request.sendResponse(RTSPResponse.ok());
+      }
     }
   }
 

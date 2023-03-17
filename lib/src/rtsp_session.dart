@@ -31,9 +31,12 @@ class RTSPSession {
   String? get path => _path;
 
   /// 会话
-  String? _session;
+  String? _sessionId;
 
-  String? get session => _session;
+  String? get sessionId => _sessionId;
+
+  /// 是否是临时会话
+  bool get temporary => _sessionId == null;
 
   /// 地址
   String get address => _socket.remoteAddress.address;
@@ -43,10 +46,15 @@ class RTSPSession {
     required Socket socket,
   }) : _socket = socket;
 
+  /// 初始化sessionId
+  void initSession() {
+    _sessionId ??= const Uuid().v4();
+  }
+
   /// 发送数据
   void sendResponse(RTSPResponse response) {
     response._serverName = serverName;
-    response.session = session;
+    response.session = sessionId;
     send(response.toResponseText());
   }
 

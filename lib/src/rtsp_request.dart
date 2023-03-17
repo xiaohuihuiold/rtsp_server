@@ -117,11 +117,13 @@ class RTSPRequest {
       }
       body = lines.sublist(bodyBeginIndex, bodyEndIndex).join('\r\n');
     }
+    final uri = Uri.parse(uriStr);
+    session._path = uri.path;
 
     return RTSPRequest._create(
       session: session,
       method: method,
-      uri: Uri.parse(uriStr),
+      uri: uri,
       headers: headers,
       cSeq: headers[RTSPHeaders.cSeq.name],
       body: body,

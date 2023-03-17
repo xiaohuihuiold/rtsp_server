@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:rtsp_server/src/rtsp_headers.dart';
+import 'package:uuid/uuid.dart';
 
 import 'logger.dart';
 
@@ -11,6 +12,8 @@ part 'rtsp_request.dart';
 part 'rtsp_response.dart';
 
 part 'rtsp_session.dart';
+
+part 'sessions_manager.dart';
 
 typedef HandleCallback = void Function(RTSPRequest);
 typedef OnSessionConnected = void Function(RTSPSession);
@@ -95,7 +98,7 @@ class ConnectionManager {
     required this.serverName,
     required OnSessionConnected onSessionConnected,
     required OnSessionDisconnected onSessionDisconnected,
-  })  : _onSessionConnected = onSessionDisconnected,
+  })  : _onSessionConnected = onSessionConnected,
         _onSessionDisconnected = onSessionDisconnected;
 
   /// 开始

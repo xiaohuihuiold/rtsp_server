@@ -117,7 +117,8 @@ class LoggerWrapper {
     StackTrace? stackTrace,
   }) {
     if (session != null) {
-      message = '[${session.address}]: $message';
+      message =
+          '[${session.address}]${session.temporary ? '' : '(${session.sessionId})'}: $message';
     }
     logger.log(level, message, error, stackTrace);
   }
@@ -153,5 +154,4 @@ class MySimplePrinter extends SimplePrinter {
       return finalMessage.toString();
     }
   }
-
 }

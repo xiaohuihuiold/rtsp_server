@@ -1,5 +1,4 @@
-import 'package:rtsp_server/src/rtsp_headers.dart';
-
+import 'rtsp_headers.dart';
 import 'connection_manager.dart';
 
 /// rtsp服务
@@ -13,8 +12,8 @@ class RTSPServer {
   /// 连接管理器
   ConnectionManager? _connectionManager;
 
-  /// 会话
-  final sessions = <String, RTSPSession>{};
+  /// 会话管理器
+  final sessionsManager = SessionsManager();
 
   RTSPServer({
     required this.port,
@@ -48,18 +47,12 @@ class RTSPServer {
     _connectionManager?.stop();
   }
 
-  /// 移除session
-  void removeSession(RTSPSession session) {
-    if (session.state != RTSPSessionState.disconnected) {
-      session.close();
-    }
-    sessions.remove(session.session);
+  void _onSessionConnected(RTSPSession session) {
+    sessionsManager.addSession(session);
   }
 
-  void _onSessionConnected(RTSPSession session) {}
-
   void _onSessionDisconnected(RTSPSession session) {
-    removeSession(session);
+    sessionsManager.removeSession(session);
   }
 
   void _handleDescribe(RTSPRequest request) {
@@ -74,7 +67,7 @@ class RTSPServer {
     request.sendResponse(RTSPResponse.ok(
       headers: {
         RTSPHeaders.public.name:
-            RTSPHeaders.values.map((e) => e.name).join(', '),
+            RTSPRequestMethod.values.map((e) => e.name).join(', '),
       },
     ));
   }

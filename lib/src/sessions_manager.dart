@@ -24,9 +24,7 @@ class SessionsManager {
 
   /// 移除会话
   void removeSession(RTSPSession session) {
-    if (session.state != RTSPSessionState.disconnected) {
-      session.close();
-    }
+    session._close();
     if (session.temporary) {
       _tempSessions.remove(session);
       logger.i('移除临时会话', session: session);

@@ -64,7 +64,7 @@ class RTSPServer {
   void _handleAnnounce(RTSPRequest request) {
     final sdp = request.body;
     if (sdp == null) {
-      request.sendResponse(RTSPResponse.badRequest());
+      request.sendResponse(RTSPResponse.badRequest(body: 'sdp=null'));
     } else {
       logger.v('设置sdp数据: \n$sdp', session: request.session);
       request.sendResponse(RTSPResponse.ok());
@@ -98,7 +98,7 @@ class RTSPServer {
     // TODO: 实现transport解析
     sessionsManager.createSession(session);
     if (transport == null) {
-      request.sendResponse(RTSPResponse.badRequest());
+      request.sendResponse(RTSPResponse.badRequest(body: 'transport=null'));
     } else {
       logger.v('设置流: $path\n$transport', session: session);
       // TODO: 实现UDP

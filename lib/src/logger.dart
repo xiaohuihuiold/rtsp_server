@@ -10,14 +10,16 @@ class LoggerWrapper {
   final logger = Logger(
     printer: HybridPrinter(
       MySimplePrinter(),
-      error: PrettyPrinter(
+      /*error: PrettyPrinter(
         printTime: true,
         stackTraceBeginIndex: 2,
         methodCount: 4,
         noBoxingByDefault: true,
-      ),
+      ),*/
     ),
   );
+
+  void nope() {}
 
   void v(
     dynamic message, {

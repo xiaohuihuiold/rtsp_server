@@ -138,6 +138,7 @@ class ConnectionManager {
     session._listen(
       (bytes) => _onClientData(session, bytes),
       onDone: () => _onClientDisconnected(session),
+      onError: (e) => logger.e('客户端异常', session: session, error: e),
     );
   }
 
@@ -184,14 +185,14 @@ class ConnectionManager {
         } on RequestMethodException catch (e) {
           final response = RTSPResponse.methodNotAllowed();
           response.cSeq = cSeq;
-          session.sendResponse(response);
           logger.w('不支持的方法', session: session, error: e);
+          session.sendResponse(response);
         } catch (e) {
           rethrow;
         }
       } catch (e) {
         logger.e('解析请求错误', session: session, error: e);
-        session.sendResponse(RTSPResponse.badRequest());
+        session.sendResponse(RTSPResponse.badRequest(body: e.toString()));
       }
     } else {
       // TODO: 处理RTP数据

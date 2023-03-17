@@ -38,8 +38,17 @@ class RTSPSession {
   /// 是否是临时会话
   bool get temporary => _sessionId == null;
 
+  String _address = '---.---.---.---';
+
   /// 地址
-  String get address => _socket.remoteAddress.address;
+  String get address {
+    try {
+      _address = _socket.remoteAddress.address;
+      return _address;
+    } catch (e) {
+      return _address;
+    }
+  }
 
   RTSPSession._create({
     required this.serverName,
@@ -50,21 +59,36 @@ class RTSPSession {
   void sendResponse(RTSPResponse response) {
     response._serverName = serverName;
     response.session = sessionId;
-    send(response.toResponseText());
     logger.v(
-      '${response.status.code}: ${response.status.message}',
+      '${response.status.code}: ${response.status.message}${response.body == null ? '' : '\n${response.body}'}',
       session: this,
     );
+    send(response.toResponseText());
   }
 
   /// 发送数据
-  void send(Object? data) {
-    _socket.write(data);
+  void send(Object? data) async {
+    if (state == RTSPSessionState.disconnected) {
+      logger.w('连接已断开', session: this);
+      return;
+    }
+    try {
+      await _socket.flush();
+      _socket.write(data);
+      await _socket.flush();
+    } catch (e) {
+      logger.w('连接已断开', session: this);
+    }
   }
 
   /// 关闭连接
-  void close() {
-    _socket.close();
+  void _close() async {
+    _state = RTSPSessionState.disconnected;
+    try {
+      _socket.close();
+    } catch (e) {
+      logger.nope();
+    }
   }
 
   /// 监听socket数据

@@ -1,4 +1,5 @@
 import 'package:rtsp_server/src/connection_manager.dart';
+import 'package:rtsp_server/src/logger.dart';
 
 part 'rtsp_streams.dart';
 
@@ -13,7 +14,11 @@ class StreamsManager {
     if (path == null) {
       return null;
     }
-    return RTSPStreams._create(path: path, sdp: sdp, recorder: session);
+    final streams =
+        RTSPStreams._create(path: path, sdp: sdp, recorder: session);
+    _streams[path] = streams;
+    logger.i('创建流: $path', session: session);
+    return streams;
   }
 
   /// 获取流

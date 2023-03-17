@@ -83,12 +83,12 @@ class RTSPRequest {
     final methodStr = headMatch?.group(1);
     final uriStr = headMatch?.group(2);
     if (uriStr == null || methodStr == null) {
-      throw Exception('method: $methodStr, uri: $uriStr');
+      throw RequestHeadException(method: methodStr, uri: uriStr);
     }
     final method = RTSPRequestMethod.values
         .firstWhereOrNull((element) => element.method == methodStr);
     if (method == null) {
-      throw Exception('不支持的方法: $methodStr');
+      throw RequestMethodException(method: methodStr, message: '不支持的方法');
     }
 
     // 处理请求头
@@ -118,6 +118,13 @@ class RTSPRequest {
       body = lines.sublist(bodyBeginIndex, bodyEndIndex).join('\r\n');
     }
     final uri = Uri.parse(uriStr);
+    if (session._path != null && session._path != uri.path) {
+      throw RequestHeadException(
+        method: methodStr,
+        uri: uriStr,
+        message: 'path不一致',
+      );
+    }
     session._path = uri.path;
 
     return RTSPRequest._create(

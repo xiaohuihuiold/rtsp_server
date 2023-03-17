@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:rtsp_server/src/rtsp_headers.dart';
 import 'package:uuid/uuid.dart';
 
+import 'exceptions.dart';
 import 'logger.dart';
 
 part 'rtsp_request.dart';
@@ -152,27 +153,41 @@ class ConnectionManager {
     if (session.state == RTSPSessionState.none) {
       // 客户端未确定推流播流时只有文本数据
       try {
-        final request = RTSPRequest._fromBytes(
-          session,
-          bytes: bytes,
-          serverName: serverName,
-        );
-        logger.v(
-          '请求${request.method.method} ${request.path}',
-          session: request.session,
-        );
-        final handle = handler[request.method];
-        if (handle != null) {
-          try {
-            handle(request);
-          } catch (e) {
-            logger.e('请求处理错误', session: session, error: e);
-            request.sendResponse(
-              RTSPResponse.internalServerError(body: e.toString()),
-            );
+        final data = utf8.decode(bytes);
+
+        final cSeqReg = RegExp(r'CSeq\s*:\s*(\d+)');
+        final cSeqMatch = cSeqReg.firstMatch(data);
+        final cSeq = cSeqMatch?.group(1);
+        try {
+          final request = RTSPRequest._fromString(
+            session,
+            data: data,
+            serverName: serverName,
+          );
+          logger.v(
+            '请求${request.method.method} ${request.path}',
+            session: request.session,
+          );
+          final handle = handler[request.method];
+          if (handle != null) {
+            try {
+              handle(request);
+            } catch (e) {
+              logger.e('请求处理错误', session: session, error: e);
+              request.sendResponse(
+                RTSPResponse.internalServerError(body: e.toString()),
+              );
+            }
+          } else {
+            request.sendResponse(RTSPResponse.methodNotAllowed());
           }
-        } else {
-          request.sendResponse(RTSPResponse.methodNotAllowed());
+        } on RequestMethodException catch (e) {
+          final response = RTSPResponse.methodNotAllowed();
+          response.cSeq = cSeq;
+          session.sendResponse(response);
+          logger.w('不支持的方法', session: session, error: e);
+        } catch (e) {
+          rethrow;
         }
       } catch (e) {
         logger.e('解析请求错误', session: session, error: e);

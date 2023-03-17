@@ -10,9 +10,11 @@ part 'rtsp_request.dart';
 
 part 'rtsp_response.dart';
 
-part 'rtsp_client.dart';
+part 'rtsp_session.dart';
 
 typedef HandleCallback = void Function(RTSPRequest);
+typedef OnSessionConnected = void Function(RTSPSession);
+typedef OnSessionDisconnected = void Function(RTSPSession);
 
 /// 请求处理
 class RequestHandler {
@@ -71,11 +73,17 @@ class ConnectionManager {
   /// 服务器名称
   final String serverName;
 
-  /// socket
-  ServerSocket? _serverSocket;
+  /// 会话连接
+  final OnSessionConnected _onSessionConnected;
+
+  /// 会话断开
+  final OnSessionDisconnected _onSessionDisconnected;
 
   /// 请求处理
   final handler = RequestHandler._();
+
+  /// socket
+  ServerSocket? _serverSocket;
 
   /// 是否运行中
   bool _running = false;
@@ -85,14 +93,17 @@ class ConnectionManager {
   ConnectionManager({
     required this.port,
     required this.serverName,
-  });
+    required OnSessionConnected onSessionConnected,
+    required OnSessionDisconnected onSessionDisconnected,
+  })  : _onSessionConnected = onSessionDisconnected,
+        _onSessionDisconnected = onSessionDisconnected;
 
   /// 开始
   Future<bool> start() async {
     logger.i('RTSP服务开启中...');
     _serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, port);
     _serverSocket?.listen(
-      _onClientConnect,
+      _onClientConnected,
       onDone: _onStop,
     );
     _running = true;
@@ -113,45 +124,56 @@ class ConnectionManager {
   }
 
   /// 客户端连接
-  void _onClientConnect(Socket socket) {
-    final client = RTSPClient._create(this, socket: socket);
-    logger.i('客户端连接', client: client);
-    client.socket.listen(
-      (bytes) => _onClientData(client, bytes),
-      onDone: () => _onClientDisconnect(client),
+  void _onClientConnected(Socket socket) {
+    final session = RTSPSession._create(
+      serverName: serverName,
+      socket: socket,
+    );
+    logger.i('客户端连接', session: session);
+    _onSessionConnected(session);
+    session._listen(
+      (bytes) => _onClientData(session, bytes),
+      onDone: () => _onClientDisconnected(session),
     );
   }
 
   /// 客户端断开连接
-  void _onClientDisconnect(RTSPClient client) {
-    logger.i('客户端断开连接', client: client);
+  void _onClientDisconnected(RTSPSession session) {
+    logger.i('客户端断开连接', session: session);
+    session._state = RTSPSessionState.disconnected;
+    _onSessionDisconnected(session);
   }
 
   /// 客户端发送数据
-  void _onClientData(RTSPClient client, Uint8List bytes) {
-    if (client.state == RTSPClientState.none) {
+  void _onClientData(RTSPSession session, Uint8List bytes) {
+    if (session.state == RTSPSessionState.none) {
       // 客户端未确定推流播流时只有文本数据
       try {
-        final request = RTSPRequest._fromBytes(client, bytes);
+        final request = RTSPRequest._fromBytes(
+          session,
+          bytes: bytes,
+          serverName: serverName,
+        );
         logger.v(
           '请求${request.method.method} ${request.path}',
-          client: request.client,
+          session: request.session,
         );
         final handle = handler[request.method];
         if (handle != null) {
           try {
             handle(request);
           } catch (e) {
-            logger.e('请求处理错误', client: client, error: e);
+            logger.e('请求处理错误', session: session, error: e);
             request.sendResponse(
-                RTSPResponse.internalServerError(body: e.toString()));
+              RTSPResponse.internalServerError(body: e.toString()),
+            );
           }
         } else {
           request.sendResponse(RTSPResponse.methodNotAllowed());
         }
       } catch (e) {
-        logger.e('解析请求错误', client: client, error: e);
-        client.send(RTSPResponse.badRequest().toResponseText());
+        logger.e('解析请求错误', session: session, error: e);
+        session.send(RTSPResponse.badRequest().toResponseText());
       }
     } else {
       // TODO: 处理RTP数据

@@ -25,7 +25,7 @@ enum RTSPRequestMethod {
 /// RTSP请求
 class RTSPRequest {
   /// 客户端
-  final RTSPClient client;
+  final RTSPSession session;
 
   /// 请求方法
   final RTSPRequestMethod method;
@@ -42,23 +42,39 @@ class RTSPRequest {
   /// 内容
   final String? body;
 
+  /// 服务器名称
+  final String serverName;
+
   /// 路径
   String get path => uri.path;
 
   RTSPRequest._create({
-    required this.client,
+    required this.session,
     required this.method,
     required this.uri,
     this.cSeq,
     required this.headers,
     this.body,
+    required this.serverName,
   });
 
-  factory RTSPRequest._fromBytes(RTSPClient client, Uint8List bytes) {
-    return RTSPRequest._fromString(client, utf8.decode(bytes));
+  factory RTSPRequest._fromBytes(
+    RTSPSession session, {
+    required Uint8List bytes,
+    required String serverName,
+  }) {
+    return RTSPRequest._fromString(
+      session,
+      data: utf8.decode(bytes),
+      serverName: serverName,
+    );
   }
 
-  factory RTSPRequest._fromString(RTSPClient client, String data) {
+  factory RTSPRequest._fromString(
+    RTSPSession session, {
+    required String data,
+    required String serverName,
+  }) {
     final lines = data.split('\r\n');
 
     // 查找头部信息
@@ -103,24 +119,24 @@ class RTSPRequest {
     }
 
     return RTSPRequest._create(
-      client: client,
+      session: session,
       method: method,
       uri: Uri.parse(uriStr),
       headers: headers,
       cSeq: headers[RTSPHeaders.cSeq.name],
       body: body,
+      serverName: serverName,
     );
   }
 
   /// 发送响应数据
   void sendResponse(RTSPResponse response) {
     response.cSeq = cSeq;
-    response._serverName = client.serverName;
-    client.send(response.toResponseText());
+    session.sendResponse(response);
   }
 
   @override
   String toString() {
-    return 'RTSPRequest(${method.method}, ${client.address}): $path';
+    return 'RTSPRequest(${method.method}, ${session.address}): $path';
   }
 }

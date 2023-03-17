@@ -13,6 +13,9 @@ class RTSPServer {
   /// 连接管理器
   ConnectionManager? _connectionManager;
 
+  /// 会话
+  final sessions = <String, RTSPSession>{};
+
   RTSPServer({
     required this.port,
     this.serverName = 'rtspserver',
@@ -24,7 +27,12 @@ class RTSPServer {
       return true;
     }
     _connectionManager?.stop();
-    _connectionManager = ConnectionManager(port: port, serverName: serverName);
+    _connectionManager = ConnectionManager(
+      port: port,
+      serverName: serverName,
+      onSessionConnected: _onSessionConnected,
+      onSessionDisconnected: _onSessionDisconnected,
+    );
     _connectionManager?.handler.describe(_handleDescribe);
     _connectionManager?.handler.announce(_handleAnnounce);
     _connectionManager?.handler.options(_handleOptions);
@@ -38,6 +46,20 @@ class RTSPServer {
   /// 停止服务
   void stop() {
     _connectionManager?.stop();
+  }
+
+  /// 移除session
+  void removeSession(RTSPSession session) {
+    if (session.state != RTSPSessionState.disconnected) {
+      session.close();
+    }
+    sessions.remove(session.session);
+  }
+
+  void _onSessionConnected(RTSPSession session) {}
+
+  void _onSessionDisconnected(RTSPSession session) {
+    removeSession(session);
   }
 
   void _handleDescribe(RTSPRequest request) {

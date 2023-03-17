@@ -30,6 +30,9 @@ class RTSPResponse {
   /// CSeq
   String? cSeq;
 
+  /// session
+  String? session;
+
   /// 服务器名称
   String? _serverName;
 
@@ -38,10 +41,12 @@ class RTSPResponse {
     required this.headers,
     this.body,
     this.cSeq,
+    this.session,
   });
 
   factory RTSPResponse.ok({
     String? cSeq,
+    String? session,
     Map<String, String>? headers,
     String? body,
   }) {
@@ -50,6 +55,7 @@ class RTSPResponse {
       status: RTSPResponseStatus.ok,
       headers: {...?headers},
       body: body,
+      session: session,
     );
   }
 
@@ -142,6 +148,10 @@ class RTSPResponse {
       headers[RTSPHeaders.cSeq.name] = cSeq;
     }
     headers[RTSPHeaders.server.name] = _serverName ?? 'unknown';
+    final session = this.session;
+    if (session != null) {
+      headers[RTSPHeaders.session.name] = session;
+    }
     for (final entry in headers.entries) {
       stringBuffer.write('${entry.key}: ${entry.value}\r\n');
     }

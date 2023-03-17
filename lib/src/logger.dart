@@ -21,14 +21,14 @@ class LoggerWrapper {
 
   void v(
     dynamic message, {
-    RTSPClient? client,
+    RTSPSession? session,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.verbose,
       message,
-      client: client,
+      session: session,
       error: error,
       stackTrace: stackTrace,
     );
@@ -36,14 +36,14 @@ class LoggerWrapper {
 
   void d(
     dynamic message, {
-    RTSPClient? client,
+    RTSPSession? session,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.debug,
       message,
-      client: client,
+      session: session,
       error: error,
       stackTrace: stackTrace,
     );
@@ -51,14 +51,14 @@ class LoggerWrapper {
 
   void i(
     dynamic message, {
-    RTSPClient? client,
+    RTSPSession? session,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.info,
       message,
-      client: client,
+      session: session,
       error: error,
       stackTrace: stackTrace,
     );
@@ -66,14 +66,14 @@ class LoggerWrapper {
 
   void w(
     dynamic message, {
-    RTSPClient? client,
+    RTSPSession? session,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.warning,
       message,
-      client: client,
+      session: session,
       error: error,
       stackTrace: stackTrace,
     );
@@ -81,14 +81,14 @@ class LoggerWrapper {
 
   void e(
     dynamic message, {
-    RTSPClient? client,
+    RTSPSession? session,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.error,
       message,
-      client: client,
+      session: session,
       error: error,
       stackTrace: stackTrace,
     );
@@ -96,14 +96,14 @@ class LoggerWrapper {
 
   void wtf(
     dynamic message, {
-    RTSPClient? client,
+    RTSPSession? session,
     dynamic error,
     StackTrace? stackTrace,
   }) {
     log(
       Level.wtf,
       message,
-      client: client,
+      session: session,
       error: error,
       stackTrace: stackTrace,
     );
@@ -112,12 +112,12 @@ class LoggerWrapper {
   void log(
     Level level,
     dynamic message, {
-    RTSPClient? client,
+    RTSPSession? session,
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    if (client != null) {
-      message = '[${client.address}]: $message';
+    if (session != null) {
+      message = '[${session.address}]: $message';
     }
     logger.log(level, message, error, stackTrace);
   }

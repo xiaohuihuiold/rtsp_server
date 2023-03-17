@@ -46,11 +46,6 @@ class RTSPSession {
     required Socket socket,
   }) : _socket = socket;
 
-  /// 初始化sessionId
-  void initSession() {
-    _sessionId ??= const Uuid().v4();
-  }
-
   /// 发送数据
   void sendResponse(RTSPResponse response) {
     response._serverName = serverName;

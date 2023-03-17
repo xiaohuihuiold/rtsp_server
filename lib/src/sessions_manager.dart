@@ -45,4 +45,16 @@ class SessionsManager {
   void setSessionPath(RTSPSession session, String path) {
     session._path = path;
   }
+
+  /// 设置会话状态
+  void setSessionState(RTSPSession session, RTSPSessionState state) {
+    session._state = state;
+  }
+
+  /// 设置会话id
+  void createSession(RTSPSession session) {
+    final sessionId = session._sessionId ?? const Uuid().v4();
+    _tempSessions.remove(session);
+    _sessions[sessionId] = session;
+  }
 }

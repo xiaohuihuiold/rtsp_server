@@ -82,20 +82,25 @@ class RTSPServer {
   }
 
   void _handleRecord(RTSPRequest request) {
-    // TODO: 处理
+    final session = request.session;
+    final range = request.getHeader(RTSPHeaders.range);
+    logger.i('开始推流($range): ${request.path}', session: session);
+    sessionsManager.setSessionState(session, RTSPSessionState.recording);
+    request.sendResponse(RTSPResponse.ok());
   }
 
   void _handleSetup(RTSPRequest request) {
+    final session = request.session;
     final path = request.path;
     // TCP: RTP/AVP/TCP;unicast;interleaved=0-1;mode=record
     // UDP单播: RTP/AVP/UDP;unicast;client_port=10918-10919;mode=record
     final transport = request.getHeader(RTSPHeaders.transport);
     // TODO: 实现transport解析
-    request.session.initSession();
+    sessionsManager.createSession(session);
     if (transport == null) {
       request.sendResponse(RTSPResponse.badRequest());
     } else {
-      logger.v('设置流: $path\n$transport', session: request.session);
+      logger.v('设置流: $path\n$transport', session: session);
       // TODO: 实现UDP
       // TCP
       request.sendResponse(RTSPResponse.setup(transport: transport));

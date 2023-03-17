@@ -137,9 +137,21 @@ class ConnectionManager {
           '请求${request.method.method} ${request.path}',
           client: request.client,
         );
-        handler[request.method]?.call(request);
+        final handle = handler[request.method];
+        if (handle != null) {
+          try {
+            handle(request);
+          } catch (e) {
+            logger.e('请求处理错误', client: client, error: e);
+            request.sendResponse(
+                RTSPResponse.internalServerError(body: e.toString()));
+          }
+        } else {
+          request.sendResponse(RTSPResponse.methodNotAllowed());
+        }
       } catch (e) {
         logger.e('解析请求错误', client: client, error: e);
+        client.send(RTSPResponse.badRequest().toResponseText());
       }
     } else {
       // TODO: 处理RTP数据

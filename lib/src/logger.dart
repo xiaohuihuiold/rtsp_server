@@ -14,6 +14,7 @@ class LoggerWrapper {
         printTime: true,
         stackTraceBeginIndex: 2,
         methodCount: 4,
+        noBoxingByDefault: true,
       ),
     ),
   );
@@ -152,4 +153,5 @@ class MySimplePrinter extends SimplePrinter {
       return finalMessage.toString();
     }
   }
+
 }

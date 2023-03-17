@@ -90,11 +90,16 @@ class RTSPRequest {
     }, headersEndIndex);
 
     // 处理请求内容
+    String? body;
     int bodyBeginIndex = headersEndIndex;
     bodyBeginIndex =
         lines.indexWhere((element) => element.isNotEmpty, bodyBeginIndex);
     if (bodyBeginIndex != -1) {
-      // TODO: 处理请求内容
+      int bodyEndIndex = lines.length;
+      if (lines.last.isEmpty) {
+        bodyEndIndex--;
+      }
+      body = lines.sublist(bodyBeginIndex, bodyEndIndex).join('\r\n');
     }
 
     return RTSPRequest._create(
@@ -103,6 +108,7 @@ class RTSPRequest {
       uri: Uri.parse(uriStr),
       headers: headers,
       cSeq: headers[RTSPHeaders.cSeq.name],
+      body: body,
     );
   }
 

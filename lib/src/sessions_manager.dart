@@ -54,7 +54,11 @@ class SessionsManager {
   /// 设置会话id
   void createSession(RTSPSession session) {
     final sessionId = session._sessionId ?? const Uuid().v4();
-    _tempSessions.remove(session);
-    _sessions[sessionId] = session;
+    if (session.temporary) {
+      session._sessionId = sessionId;
+      _tempSessions.remove(session);
+      _sessions[sessionId] = session;
+      logger.i('临时会话转换为永久会话', session: session);
+    }
   }
 }

@@ -137,6 +137,30 @@ class RTSPResponse {
     );
   }
 
+  factory RTSPResponse.options({
+    String? cSeq,
+    required List<String> public,
+  }) {
+    return RTSPResponse._create(
+      cSeq: cSeq,
+      status: RTSPResponseStatus.ok,
+      headers: {RTSPHeaders.public.name: public.join(', ')},
+    );
+  }
+
+  factory RTSPResponse.setup({
+    String? cSeq,
+    String? session,
+    required String transport,
+  }) {
+    return RTSPResponse._create(
+      cSeq: cSeq,
+      session: session,
+      status: RTSPResponseStatus.ok,
+      headers: {RTSPHeaders.transport.name: transport},
+    );
+  }
+
   /// 生成响应文本
   String toResponseText() {
     final stringBuffer = StringBuffer();

@@ -1,3 +1,5 @@
+import 'package:rtsp_server/src/logger.dart';
+
 import 'rtsp_headers.dart';
 import 'connection_manager.dart';
 
@@ -60,15 +62,18 @@ class RTSPServer {
   }
 
   void _handleAnnounce(RTSPRequest request) {
-    // TODO: 处理
+    final sdp = request.body;
+    if (sdp == null) {
+      request.sendResponse(RTSPResponse.badRequest());
+    } else {
+      logger.v('设置sdp数据: \n$sdp', session: request.session);
+      request.sendResponse(RTSPResponse.ok());
+    }
   }
 
   void _handleOptions(RTSPRequest request) {
-    request.sendResponse(RTSPResponse.ok(
-      headers: {
-        RTSPHeaders.public.name:
-            RTSPRequestMethod.values.map((e) => e.name).join(', '),
-      },
+    request.sendResponse(RTSPResponse.options(
+      public: RTSPRequestMethod.values.map((e) => e.name).toList(),
     ));
   }
 
@@ -81,7 +86,20 @@ class RTSPServer {
   }
 
   void _handleSetup(RTSPRequest request) {
-    // TODO: 处理
+    final path = request.path;
+    // TCP: RTP/AVP/TCP;unicast;interleaved=0-1;mode=record
+    // UDP单播: RTP/AVP/UDP;unicast;client_port=10918-10919;mode=record
+    final transport = request.getHeader(RTSPHeaders.transport);
+    // TODO: 实现transport解析
+    request.session.initSession();
+    if (transport == null) {
+      request.sendResponse(RTSPResponse.badRequest());
+    } else {
+      logger.v('设置流: $path\n$transport', session: request.session);
+      // TODO: 实现UDP
+      // TCP
+      request.sendResponse(RTSPResponse.setup(transport: transport));
+    }
   }
 
   void _handleTeardown(RTSPRequest request) {

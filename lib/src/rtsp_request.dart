@@ -118,14 +118,14 @@ class RTSPRequest {
       body = lines.sublist(bodyBeginIndex, bodyEndIndex).join('\r\n');
     }
     final uri = Uri.parse(uriStr);
-    if (session._path != null && session._path != uri.path) {
+    /*if (session._path != null && session._path != uri.path) {
       throw RequestHeadException(
         method: methodStr,
         uri: uriStr,
         message: 'path不一致',
       );
-    }
-    session._path = uri.path;
+    }*/
+    session._path ??= uri.path;
 
     return RTSPRequest._create(
       session: session,
@@ -136,6 +136,11 @@ class RTSPRequest {
       body: body,
       serverName: serverName,
     );
+  }
+
+  /// 获取头
+  String? getHeader(RTSPHeaders header) {
+    return headers[header.name];
   }
 
   /// 发送响应数据

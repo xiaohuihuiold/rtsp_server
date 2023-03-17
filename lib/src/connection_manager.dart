@@ -191,7 +191,7 @@ class ConnectionManager {
         }
       } catch (e) {
         logger.e('解析请求错误', session: session, error: e);
-        session.send(RTSPResponse.badRequest().toResponseText());
+        session.sendResponse(RTSPResponse.badRequest());
       }
     } else {
       // TODO: 处理RTP数据

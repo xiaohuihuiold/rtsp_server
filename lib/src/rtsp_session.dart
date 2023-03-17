@@ -56,6 +56,10 @@ class RTSPSession {
     response._serverName = serverName;
     response.session = sessionId;
     send(response.toResponseText());
+    logger.v(
+      '${response.status.code}: ${response.status.message}',
+      session: this,
+    );
   }
 
   /// 发送数据

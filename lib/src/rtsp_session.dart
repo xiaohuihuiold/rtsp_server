@@ -30,10 +30,14 @@ class RTSPSession {
   /// 连接
   final Socket _socket;
 
+  /// 锁
+  final _lock = Lock();
+
   /// 状态
   RTSPSessionState _state = RTSPSessionState.none;
 
   RTSPSessionState get state => _state;
+
   /// 角色
   RTSPSessionRole _role = RTSPSessionRole.none;
 
@@ -82,27 +86,30 @@ class RTSPSession {
 
   /// 发送数据
   void send(Object? data) async {
-    if (state == RTSPSessionState.disconnected) {
-      logger.w('连接已断开', session: this);
-      return;
-    }
-    try {
-      await _socket.flush();
-      _socket.write(data);
-      await _socket.flush();
-    } catch (e) {
-      logger.w('连接已断开', session: this);
-    }
+    await _lock.synchronized(() async {
+      if (state == RTSPSessionState.disconnected) {
+        return;
+      }
+      try {
+        await _socket.flush();
+        _socket.write(data);
+      } catch (e) {
+        _state = RTSPSessionState.disconnected;
+        logger.w('连接已断开', session: this);
+      }
+    });
   }
 
   /// 关闭连接
   void _close() async {
-    _state = RTSPSessionState.disconnected;
-    try {
-      _socket.close();
-    } catch (e) {
-      logger.nope();
-    }
+    await _lock.synchronized(() async {
+      _state = RTSPSessionState.disconnected;
+      try {
+        _socket.close();
+      } catch (e) {
+        logger.nope();
+      }
+    });
   }
 
   /// 监听socket数据

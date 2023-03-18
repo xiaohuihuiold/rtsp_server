@@ -22,6 +22,29 @@ class RTSPStreams {
     required this.sdp,
     required this.recorder,
   });
+
+  /// 添加播放器
+  void addPlayer(RTSPSession session) {
+    players.add(session);
+  }
+
+  /// 移除播放器
+  void removePlayer(RTSPSession session) {
+    players.remove(session);
+  }
+
+  /// 写入数据
+  void writeRTP(Uint8List bytes) {
+    for (final player in players) {
+      player.send(bytes);
+    }
+  }
+
+  /// 销毁
+  void _destroy() {
+    players.clear();
+    streams.clear();
+  }
 }
 
 /// 媒体流

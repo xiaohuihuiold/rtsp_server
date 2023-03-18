@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:rtsp_server/src/rtsp_headers.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:uuid/uuid.dart';
 
 import 'exceptions.dart';
@@ -19,6 +20,7 @@ part 'sessions_manager.dart';
 typedef HandleCallback = void Function(RTSPRequest);
 typedef OnSessionConnected = void Function(RTSPSession);
 typedef OnSessionDisconnected = void Function(RTSPSession);
+typedef OnRTP = void Function(RTSPSession, Uint8List);
 
 /// 请求处理
 class RequestHandler {
@@ -83,6 +85,9 @@ class ConnectionManager {
   /// 会话断开
   final OnSessionDisconnected _onSessionDisconnected;
 
+  /// RTP回调
+  final OnRTP _onRTP;
+
   /// 请求处理
   final handler = RequestHandler._();
 
@@ -102,8 +107,10 @@ class ConnectionManager {
     required this.serverName,
     required OnSessionConnected onSessionConnected,
     required OnSessionDisconnected onSessionDisconnected,
+    required OnRTP onRTP,
   })  : _onSessionConnected = onSessionConnected,
-        _onSessionDisconnected = onSessionDisconnected;
+        _onSessionDisconnected = onSessionDisconnected,
+        _onRTP = onRTP;
 
   /// 开始
   Future<bool> start() async {
@@ -224,6 +231,6 @@ class ConnectionManager {
 
   /// 处理RTP数据
   void _handleRTP(RTSPSession session, Uint8List bytes) {
-    // TODO: 处理RTP数据
+    _onRTP(session, bytes);
   }
 }

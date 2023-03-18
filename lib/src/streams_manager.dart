@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:rtsp_server/src/connection_manager.dart';
 import 'package:rtsp_server/src/logger.dart';
 
@@ -19,6 +21,13 @@ class StreamsManager {
     _streams[path] = streams;
     logger.i('创建流: $path', session: session);
     return streams;
+  }
+
+  /// 销毁流
+  void destroyStreams(RTSPStreams streams) {
+    logger.i('销毁流: ${streams.path}');
+    _streams.remove(streams.path);
+    streams._destroy();
   }
 
   /// 获取流

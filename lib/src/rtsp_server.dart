@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:rtsp_server/src/logger.dart';
 import 'package:rtsp_server/src/streams_manager.dart';
 
@@ -37,6 +39,7 @@ class RTSPServer {
       serverName: serverName,
       onSessionConnected: _onSessionConnected,
       onSessionDisconnected: _onSessionDisconnected,
+      onRTP: _onRTP,
     );
     _connectionManager?.handler.describe(_handleDescribe);
     _connectionManager?.handler.announce(_handleAnnounce);
@@ -59,6 +62,14 @@ class RTSPServer {
 
   void _onSessionDisconnected(RTSPSession session) {
     sessionsManager.removeSession(session);
+    final streams = streamsManager.getStreams(session.path);
+    if (streams != null) {
+      if (streams.recorder == session) {
+        streamsManager.destroyStreams(streams);
+      } else {
+        streams.removePlayer(session);
+      }
+    }
   }
 
   void _handleDescribe(RTSPRequest request) {
@@ -97,7 +108,13 @@ class RTSPServer {
   }
 
   void _handlePlay(RTSPRequest request) {
-    // TODO: 处理
+    final streams = streamsManager.getStreams(request.session.path);
+    if (streams == null) {
+      request.sendResponse(RTSPResponse.notFound());
+    } else {
+      streams.addPlayer(request.session);
+      request.sendResponse(RTSPResponse.ok());
+    }
   }
 
   void _handleRecord(RTSPRequest request) {
@@ -128,5 +145,14 @@ class RTSPServer {
 
   void _handleTeardown(RTSPRequest request) {
     // TODO: 处理
+  }
+
+  /// 处理RTP数据
+  void _onRTP(RTSPSession session, Uint8List bytes) {
+    final streams = streamsManager.getStreams(session.path);
+    if (streams == null) {
+      return;
+    }
+    streams.writeRTP(bytes);
   }
 }

@@ -80,7 +80,7 @@ class RTSPServer {
       sessionsManager.setSessionRole(request.session, RTSPSessionRole.player);
       request.sendResponse(RTSPResponse.describe(
         sdp: streams.sdp,
-        baseUrl: '${request.uri.scheme}://${request.uri.authority}/',
+        baseUrl: request.path,
       ));
     }
   }

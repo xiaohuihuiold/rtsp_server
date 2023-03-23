@@ -40,7 +40,7 @@ class RTPPacket {
 
   /// 32bit
   /// csrc
-  final int csrc;
+  final List<int> csrc;
 
   /// payload
   final Uint8List payload;
@@ -58,4 +58,9 @@ class RTPPacket {
     required this.csrc,
     required this.payload,
   });
+
+  @override
+  String toString() {
+    return 'RTPPacket(v: $version, p: $padding, x: $extension, cc: $csrcLength, m: $marker, pt: $payloadType, seq: $seq, timestamp: $timestamp, ssrc: $ssrc)';
+  }
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:collection/collection.dart';
+import 'package:rtsp_server/src/rtp_packet.dart';
 import 'package:rtsp_server/src/rtsp_headers.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:uuid/uuid.dart';
@@ -161,11 +162,36 @@ class ConnectionManager {
 
   /// 客户端发送数据
   void _onClientData(RTSPSession session, Uint8List bytes) {
-    if (session.state == RTSPSessionState.none) {
+    /*if (bytes[0] != 0x24 || session.state == RTSPSessionState.none) {
       // 客户端未确定推流播流时只有文本数据
       _handleRequest(session, bytes);
     } else {
       _handleRTP(session, bytes);
+    }*/
+    // 0x24表示RTP数据
+
+    if (bytes[0] == 0x24) {
+      int offset = 0;
+      while (offset < bytes.length) {
+        offset += 1;
+        final isRTCP = bytes[offset] & 0x1 == 1;
+        offset += 2;
+        final length = (bytes[offset - 1] << 8) | bytes[offset];
+        offset += 1;
+        if (offset + length > bytes.length) {
+          logger.w('不完整的包', session: session);
+          break;
+        }
+        final byteData = ByteData.view(bytes.buffer, offset, length);
+        offset += length;
+        if (isRTCP) {
+          // TODO:处理RTCP
+        } else {
+          _handleRTP(session, byteData);
+        }
+      }
+    } else {
+      _handleRequest(session, bytes);
     }
   }
 
@@ -230,7 +256,46 @@ class ConnectionManager {
   }
 
   /// 处理RTP数据
-  void _handleRTP(RTSPSession session, Uint8List bytes) {
-    _onRTP(session, bytes);
+  void _handleRTP(RTSPSession session, ByteData byteData) {
+    final version = byteData.getUint8(0) >> 6;
+    final padding = (byteData.getUint8(0) >> 5) & 0x1;
+    final extension = (byteData.getUint8(0) >> 4) & 0x1;
+    final csrcLength = byteData.getUint8(0) & 0xf;
+
+    final marker = (byteData.getUint8(1) >> 7) & 0x1;
+    final payloadType = byteData.getUint8(1) & 0x71;
+    final seq = (byteData.getUint8(2) << 8) | byteData.getUint8(3);
+    final timestamp = (byteData.getUint8(4) << 24) |
+        (byteData.getUint8(5) << 16) |
+        (byteData.getUint8(6) << 8) |
+        byteData.getUint8(7);
+    final ssrc = (byteData.getUint8(8) << 24) |
+        (byteData.getUint8(9) << 16) |
+        (byteData.getUint8(10) << 8) |
+        byteData.getUint8(11);
+    final csrc = <int>[];
+    for (int i = 0; i < csrcLength; i++) {
+      csrc.add((byteData.getUint8(12 + i) << 24) |
+          (byteData.getUint8(13 + i) << 16) |
+          (byteData.getUint8(14 + i) << 8) |
+          byteData.getUint8(15 + i));
+    }
+    final rtpPacket = RTPPacket(
+      version: version,
+      padding: padding,
+      extension: extension,
+      csrcLength: csrcLength,
+      marker: marker,
+      payloadType: payloadType,
+      seq: seq,
+      timestamp: timestamp,
+      ssrc: ssrc,
+      csrc: csrc,
+      payload: byteData.buffer
+          .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+    );
+    print(rtpPacket);
+    return;
+    // _onRTP(session, bytes);
   }
 }

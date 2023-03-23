@@ -14,6 +14,7 @@ void main() {
   test('byte data', () {
     final bytes = Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     final byteData = ByteData.view(bytes.buffer, 1, bytes.length - 1);
+    print(bytes is List<int>);
     print(byteData.buffer.asUint8List(1, bytes.length - 1));
     print(byteData.offsetInBytes);
     print(byteData.lengthInBytes);

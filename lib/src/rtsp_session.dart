@@ -92,7 +92,11 @@ class RTSPSession {
       }
       try {
         await _socket.flush();
-        _socket.write(data);
+        if (data is List<int>) {
+          _socket.add(data);
+        } else {
+          _socket.write(data);
+        }
       } catch (e) {
         _state = RTSPSessionState.disconnected;
         logger.w('连接已断开', session: this);

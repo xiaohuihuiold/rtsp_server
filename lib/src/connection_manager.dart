@@ -294,8 +294,9 @@ class ConnectionManager {
       payload: byteData.buffer
           .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
     );
-    print(rtpPacket);
-    return;
-    // _onRTP(session, bytes);
+    // print(rtpPacket);
+    if (rtpPacket.payloadType == RTPPayloadType.h264) {
+      _onRTP(session, rtpPacket.toBytes());
+    }
   }
 }

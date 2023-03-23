@@ -1,5 +1,18 @@
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+
+/// payload类型
+enum RTPPayloadType {
+  unknown(-1),
+  h264(96),
+  aac(97);
+
+  final int type;
+
+  const RTPPayloadType(this.type);
+}
+
 /// RTP包
 class RTPPacket {
   /// 2bit
@@ -24,7 +37,7 @@ class RTPPacket {
 
   /// 7bit
   /// payload类型
-  final int payloadType;
+  final RTPPayloadType payloadType;
 
   /// 16bit
   /// 序列号
@@ -51,16 +64,52 @@ class RTPPacket {
     required this.extension,
     required this.csrcLength,
     required this.marker,
-    required this.payloadType,
+    required int payloadType,
     required this.seq,
     required this.timestamp,
     required this.ssrc,
     required this.csrc,
     required this.payload,
-  });
+  }) : payloadType = RTPPayloadType.values.firstWhere(
+            (e) => e.type == payloadType,
+            orElse: () => RTPPayloadType.unknown);
+
+  Uint8List toBytes() {
+    final rtpLength = 12 + csrcLength + payload.length;
+    final byteData = ByteData(4 + rtpLength);
+    int offset = 0;
+    byteData.setUint8(offset, 0x24);
+    offset += 1;
+    byteData.setUint8(offset, 0x0);
+    offset += 1;
+    byteData.setUint16(offset, rtpLength);
+    offset += 2;
+
+    // RTP
+    byteData.setUint8(offset,
+        (version << 6) | (padding << 5) | (extension << 4) | (csrcLength));
+    offset += 1;
+    byteData.setUint8(offset, (marker << 7) | payloadType.type);
+    offset += 1;
+    byteData.setUint16(offset, seq);
+    offset += 2;
+    byteData.setUint32(offset, timestamp);
+    offset += 4;
+    byteData.setUint32(offset, ssrc);
+    offset += 4;
+    for (int i = 0; i < csrc.length; i++) {
+      byteData.setUint32(offset, csrc[i]);
+      offset += 4;
+    }
+    for (int i = 0; i < payload.length; i++) {
+      byteData.setUint8(offset, payload[i]);
+      offset += 1;
+    }
+    return byteData.buffer.asUint8List();
+  }
 
   @override
   String toString() {
-    return 'RTPPacket(v: $version, p: $padding, x: $extension, cc: $csrcLength, m: $marker, pt: $payloadType, seq: $seq, timestamp: $timestamp, ssrc: $ssrc)';
+    return 'RTPPacket(v: $version, p: $padding, x: $extension, cc: $csrcLength, m: $marker, pt: $payloadType, seq: $seq, timestamp: $timestamp, ssrc: $ssrc, csrc: $csrc)';
   }
 }

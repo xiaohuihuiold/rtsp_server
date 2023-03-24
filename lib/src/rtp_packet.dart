@@ -80,7 +80,11 @@ class RTPPacket {
     int offset = 0;
     byteData.setUint8(offset, 0x24);
     offset += 1;
-    byteData.setUint8(offset, 0x0);
+    if (payloadType == RTPPayloadType.aac) {
+      byteData.setUint8(offset, 0x02);
+    } else {
+      byteData.setUint8(offset, 0x0);
+    }
     offset += 1;
     byteData.setUint16(offset, rtpLength);
     offset += 2;

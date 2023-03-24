@@ -21,7 +21,7 @@ part 'sessions_manager.dart';
 typedef HandleCallback = void Function(RTSPRequest);
 typedef OnSessionConnected = void Function(RTSPSession);
 typedef OnSessionDisconnected = void Function(RTSPSession);
-typedef OnRTP = void Function(RTSPSession, Uint8List);
+typedef OnRTP = void Function(RTSPSession, RTPPacket);
 
 /// 请求处理
 class RequestHandler {
@@ -280,6 +280,7 @@ class ConnectionManager {
           (byteData.getUint8(14 + i) << 8) |
           byteData.getUint8(15 + i));
     }
+    final headerLength = 12 + csrcLength;
     final rtpPacket = RTPPacket(
       version: version,
       padding: padding,
@@ -291,12 +292,10 @@ class ConnectionManager {
       timestamp: timestamp,
       ssrc: ssrc,
       csrc: csrc,
-      payload: byteData.buffer
-          .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+      payload: byteData.buffer.asUint8List(
+          byteData.offsetInBytes + headerLength, byteData.lengthInBytes - headerLength),
     );
     // print(rtpPacket);
-    if (rtpPacket.payloadType == RTPPayloadType.h264) {
-      _onRTP(session, rtpPacket.toBytes());
-    }
+    _onRTP(session, rtpPacket);
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:rtsp_server/src/logger.dart';
+import 'package:rtsp_server/src/rtp_packet.dart';
 import 'package:rtsp_server/src/streams_manager.dart';
 
 import 'rtsp_headers.dart';
@@ -103,7 +104,7 @@ class RTSPServer {
 
   void _handleOptions(RTSPRequest request) {
     request.sendResponse(RTSPResponse.options(
-      public: RTSPRequestMethod.values.map((e) => e.name).toList(),
+      public: RTSPRequestMethod.values.map((e) => e.method).toList(),
     ));
   }
 
@@ -113,7 +114,13 @@ class RTSPServer {
       request.sendResponse(RTSPResponse.notFound());
     } else {
       streams.addPlayer(request.session);
-      request.sendResponse(RTSPResponse.ok());
+      request.sendResponse(RTSPResponse.play(
+        headers: {
+          RTSPHeaders.rtpInfo.name:
+              'url=rtsp://127.0.0.1:8554/live/test/streamid=0;seq=${streams.videoQueue.last.seq};rtptime=${streams.videoQueue.last.timestamp},'
+                  'url=rtsp://127.0.0.1:8554/live/test/streamid=1;seq=${streams.audioQueue.last.seq};rtptime=${streams.audioQueue.last.timestamp}'
+        },
+      ));
     }
   }
 
@@ -128,6 +135,11 @@ class RTSPServer {
   void _handleSetup(RTSPRequest request) {
     final session = request.session;
     final path = request.path;
+    final streams = streamsManager.getStreams(session.path);
+    if (streams == null) {
+      request.sendResponse(RTSPResponse.notFound());
+      return;
+    }
     // TCP: RTP/AVP/TCP;unicast;interleaved=0-1;mode=record
     // UDP单播: RTP/AVP/UDP;unicast;client_port=10918-10919;mode=record
     final transport = request.getHeader(RTSPHeaders.transport);
@@ -139,7 +151,21 @@ class RTSPServer {
       logger.v('设置流: $path\n$transport', session: session);
       // TODO: 实现UDP
       // TCP
-      request.sendResponse(RTSPResponse.setup(transport: transport));
+      if (request.session.role == RTSPSessionRole.player) {
+        if (request.path.endsWith('0')) {
+          request.sendResponse(RTSPResponse.setup(
+            transport: '$transport;mode=play;ssrc=${streams.videoQueue.last.ssrc}',
+          ));
+        } else {
+          request.sendResponse(RTSPResponse.setup(
+            transport: '$transport;mode=play;ssrc=${streams.audioQueue.last.ssrc}',
+          ));
+        }
+      } else {
+        request.sendResponse(RTSPResponse.setup(
+          transport: transport,
+        ));
+      }
     }
   }
 
@@ -148,11 +174,11 @@ class RTSPServer {
   }
 
   /// 处理RTP数据
-  void _onRTP(RTSPSession session, Uint8List bytes) {
+  void _onRTP(RTSPSession session, RTPPacket packet) {
     final streams = streamsManager.getStreams(session.path);
     if (streams == null) {
       return;
     }
-    streams.writeRTP(bytes);
+    streams.writeRTP(packet);
   }
 }

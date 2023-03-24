@@ -17,6 +17,12 @@ class RTSPStreams {
   /// 播放端
   final players = <RTSPSession>[];
 
+  /// 视频队列
+  final videoQueue = Queue<RTPPacket>();
+
+  /// 音频队列
+  final audioQueue = Queue<RTPPacket>();
+
   RTSPStreams._create({
     required this.path,
     required this.sdp,
@@ -34,9 +40,23 @@ class RTSPStreams {
   }
 
   /// 写入数据
-  void writeRTP(Uint8List bytes) {
-    for (final player in players) {
-      player.send(bytes);
+  void writeRTP(RTPPacket packet) {
+    if (packet.payloadType == RTPPayloadType.h264) {
+      videoQueue.addLast(packet);
+    } else {
+      audioQueue.addLast(packet);
+    }
+    if (videoQueue.length > 10) {
+      final bytes = videoQueue.removeFirst().toBytes();
+      for (final player in players) {
+        player.send(bytes);
+      }
+    }
+    if (audioQueue.length > 10) {
+      final bytes = audioQueue.removeFirst().toBytes();
+      for (final player in players) {
+        player.send(bytes);
+      }
     }
   }
 

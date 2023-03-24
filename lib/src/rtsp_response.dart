@@ -161,6 +161,19 @@ class RTSPResponse {
     );
   }
 
+  factory RTSPResponse.play({
+    String? cSeq,
+    String? session,
+    Map<String, String>? headers,
+  }) {
+    return RTSPResponse._create(
+      cSeq: cSeq,
+      session: session,
+      status: RTSPResponseStatus.ok,
+      headers: headers ?? {},
+    );
+  }
+
   factory RTSPResponse.describe({
     String? cSeq,
     String? session,

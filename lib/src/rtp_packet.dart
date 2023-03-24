@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:collection/collection.dart';
-
 /// payload类型
 enum RTPPayloadType {
   unknown(-1),

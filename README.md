@@ -1,39 +1,31 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# rtsp_server
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
+纯dart实现的rtsp服务器,目前仅支持TCP的方式推流以及播流
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
+- [ ] UDP传输
+- [x] TCP传输
+- [x] H264视频流
+- [x] AAC音频流
+- [ ] 认证
+- [ ] 部分错误处理
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+## 启动服务器
 
 ```dart
-const like = 'sample';
+final server = RTSPServer(port: 8554);
+server.start();
 ```
 
-## Additional information
+# 推流播流命令
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+* ffmpeg使用tcp循环推流视频文件
+
+```bash
+ffmpeg -v verbose -re -stream_loop -1 -i 视频文件 -c copy -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/live/test
+```
+
+* ffplay使用tcp播流
+
+```bash
+ffplay -v verbose -rtsp_transport tcp rtsp://127.0.0.1:8554/live/test
+```

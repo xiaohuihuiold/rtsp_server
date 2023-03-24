@@ -114,13 +114,7 @@ class RTSPServer {
       request.sendResponse(RTSPResponse.notFound());
     } else {
       streams.addPlayer(request.session);
-      request.sendResponse(RTSPResponse.play(
-        headers: {
-          RTSPHeaders.rtpInfo.name:
-              'url=rtsp://127.0.0.1:8554/live/test/streamid=0;seq=${streams.videoQueue.last.seq};rtptime=${streams.videoQueue.last.timestamp},'
-                  'url=rtsp://127.0.0.1:8554/live/test/streamid=1;seq=${streams.audioQueue.last.seq};rtptime=${streams.audioQueue.last.timestamp}'
-        },
-      ));
+      request.sendResponse(RTSPResponse.play());
     }
   }
 
@@ -154,11 +148,13 @@ class RTSPServer {
       if (request.session.role == RTSPSessionRole.player) {
         if (request.path.endsWith('0')) {
           request.sendResponse(RTSPResponse.setup(
-            transport: '$transport;mode=play;ssrc=${streams.videoQueue.last.ssrc}',
+            transport:
+                '$transport;mode=play;ssrc=${streams.videoQueue.last.ssrc}',
           ));
         } else {
           request.sendResponse(RTSPResponse.setup(
-            transport: '$transport;mode=play;ssrc=${streams.audioQueue.last.ssrc}',
+            transport:
+                '$transport;mode=play;ssrc=${streams.audioQueue.last.ssrc}',
           ));
         }
       } else {
